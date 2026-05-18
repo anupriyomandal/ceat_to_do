@@ -1,14 +1,17 @@
 'use client';
 
+import { useState } from 'react';
 import { useTaskStore, getFilteredTasks } from '@/store/taskStore';
 import { FilterBar } from '@/components/FilterBar';
-import { TaskCard } from '@/components/TaskCard';
+import { TaskListItem } from '@/components/TaskListItem';
+import { TaskDetailCard } from '@/components/TaskDetailCard';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Button } from '@/components/ui/Button';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { AppShell } from '@/components/AppShell';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ListTodo, Plus, Trash2, CheckCircle } from 'lucide-react';
+import type { Task } from '@/types';
 
 export default function TasksPage() {
   const {
@@ -21,6 +24,8 @@ export default function TasksPage() {
     bulkComplete,
     openTaskForm,
   } = useTaskStore();
+
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   const filteredTasks = getFilteredTasks(tasks, filter);
   const allSelected = filteredTasks.length > 0 && filteredTasks.every((t) => selectedIds.includes(t.id));
@@ -67,26 +72,43 @@ export default function TasksPage() {
           </div>
         )}
 
-        <div className="space-y-3">
-          {filteredTasks.length > 0 ? (
-            filteredTasks.map((task, i) => (
-              <motion.div
-                key={task.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: i * 0.05 }}
-              >
-                <TaskCard task={task} selectable />
-              </motion.div>
-            ))
-          ) : (
-            <EmptyState
-              title="No tasks found"
-              description="Try adjusting your filters or create a new task."
-            />
-          )}
+        <div className="space-y-2">
+          <AnimatePresence mode="popLayout">
+            {filteredTasks.length > 0 ? (
+              filteredTasks.map((task, i) => (
+                <motion.div
+                  key={task.id}
+                  layout
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.2, delay: i * 0.03 }}
+                >
+                  <TaskListItem task={task} onClick={() => setSelectedTask(task)} />
+                </motion.div>
+              ))
+            ) : (
+              <EmptyState
+                title="No tasks found"
+                description="Try adjusting your filters or create a new task."
+              />
+            )}
+          </AnimatePresence>
         </div>
       </div>
+
+      <AnimatePresence>
+        {selectedTask && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+          >
+            <TaskDetailCard task={selectedTask} onClose={() => setSelectedTask(null)} />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </AppShell>
   );
 }
