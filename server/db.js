@@ -71,7 +71,14 @@ if (process.env.DATABASE_URL) {
     isPostgres: true,
   };
 } else {
-  const Database = (await import('better-sqlite3')).default;
+  let Database;
+  try {
+    Database = (await import('better-sqlite3')).default;
+  } catch {
+    throw new Error(
+      'SQLite is not available. Please install better-sqlite3 (npm install better-sqlite3) or set DATABASE_URL to use PostgreSQL.'
+    );
+  }
   const sqlite = new Database('./data.sqlite');
   sqlite.pragma('journal_mode = WAL');
 
