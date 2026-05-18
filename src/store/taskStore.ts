@@ -1,6 +1,7 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import type { Task, Category, ViewMode, FilterState } from '../types';
+import type { Task, Category, ViewMode, FilterState, Status } from '../types';
+
+const API_BASE = '';
 
 interface TaskState {
   tasks: Task[];
@@ -10,24 +11,28 @@ interface TaskState {
   selectedIds: string[];
   isTaskFormOpen: boolean;
   editingTaskId: string | null;
+  isLoading: boolean;
+
+  // Init
+  fetchData: () => Promise<void>;
 
   // CRUD
-  addTask: (task: Omit<Task, 'id' | 'createdAt'>) => void;
-  updateTask: (id: string, updates: Partial<Omit<Task, 'id' | 'createdAt'>>) => void;
-  deleteTask: (id: string) => void;
-  toggleTask: (id: string) => void;
-  moveTaskStatus: (id: string, status: Task['status']) => void;
+  addTask: (task: Omit<Task, 'id' | 'createdAt'>) => Promise<void>;
+  updateTask: (id: string, updates: Partial<Omit<Task, 'id' | 'createdAt'>>) => Promise<void>;
+  deleteTask: (id: string) => Promise<void>;
+  toggleTask: (id: string) => Promise<void>;
+  moveTaskStatus: (id: string, status: Task['status']) => Promise<void>;
 
   // Bulk
   toggleSelect: (id: string) => void;
   selectAll: (ids: string[]) => void;
   clearSelection: () => void;
-  bulkDelete: () => void;
-  bulkComplete: () => void;
+  bulkDelete: () => Promise<void>;
+  bulkComplete: () => Promise<void>;
 
   // Categories
-  addCategory: (name: string) => void;
-  deleteCategory: (id: string) => void;
+  addCategory: (name: string) => Promise<void>;
+  deleteCategory: (id: string) => Promise<void>;
 
   // Filter & View
   setView: (view: ViewMode) => void;
@@ -39,17 +44,10 @@ interface TaskState {
   closeTaskForm: () => void;
 
   // Data management
+  importData: (json: string) => Promise<void>;
+  clearAllData: () => Promise<void>;
   exportData: () => string;
-  importData: (json: string) => void;
-  clearAllData: () => void;
 }
-
-const initialCategories: Category[] = [
-  { id: 'work', name: 'Work' },
-  { id: 'personal', name: 'Personal' },
-  { id: 'urgent', name: 'Urgent' },
-  { id: 'ceat-projects', name: 'CEAT Projects' },
-];
 
 const initialFilters: FilterState = {
   search: '',
@@ -59,160 +57,224 @@ const initialFilters: FilterState = {
   sortOrder: 'desc',
 };
 
-export const useTaskStore = create<TaskState>()(
-  persist(
-    (set, get) => ({
-      tasks: [],
-      categories: initialCategories,
-      view: 'dashboard',
-      filter: initialFilters,
-      selectedIds: [],
-      isTaskFormOpen: false,
-      editingTaskId: null,
+export const useTaskStore = create<TaskState>((set, get) => ({
+  tasks: [],
+  categories: [],
+  view: 'dashboard',
+  filter: initialFilters,
+  selectedIds: [],
+  isTaskFormOpen: false,
+  editingTaskId: null,
+  isLoading: false,
 
-      addTask: (task) => {
-        const newTask: Task = {
-          ...task,
-          id: crypto.randomUUID(),
-          createdAt: new Date().toISOString(),
-        };
-        set((state) => ({ tasks: [newTask, ...state.tasks] }));
-      },
-
-      updateTask: (id, updates) => {
-        set((state) => ({
-          tasks: state.tasks.map((t) =>
-            t.id === id ? { ...t, ...updates } : t
-          ),
-        }));
-      },
-
-      deleteTask: (id) => {
-        set((state) => ({
-          tasks: state.tasks.filter((t) => t.id !== id),
-          selectedIds: state.selectedIds.filter((sid) => sid !== id),
-        }));
-      },
-
-      toggleTask: (id) => {
-        set((state) => ({
-          tasks: state.tasks.map((t) => {
-            if (t.id !== id) return t;
-            const isDone = t.status === 'done';
-            return {
-              ...t,
-              status: isDone ? 'todo' : 'done',
-              completedAt: isDone ? undefined : new Date().toISOString(),
-            };
-          }),
-        }));
-      },
-
-      moveTaskStatus: (id, status) => {
-        set((state) => ({
-          tasks: state.tasks.map((t) => {
-            if (t.id !== id) return t;
-            return {
-              ...t,
-              status,
-              completedAt: status === 'done' ? new Date().toISOString() : undefined,
-            };
-          }),
-        }));
-      },
-
-      toggleSelect: (id) => {
-        set((state) => ({
-          selectedIds: state.selectedIds.includes(id)
-            ? state.selectedIds.filter((sid) => sid !== id)
-            : [...state.selectedIds, id],
-        }));
-      },
-
-      selectAll: (ids) => set({ selectedIds: ids }),
-      clearSelection: () => set({ selectedIds: [] }),
-
-      bulkDelete: () => {
-        const { selectedIds } = get();
-        set((state) => ({
-          tasks: state.tasks.filter((t) => !selectedIds.includes(t.id)),
-          selectedIds: [],
-        }));
-      },
-
-      bulkComplete: () => {
-        const { selectedIds } = get();
-        set((state) => ({
-          tasks: state.tasks.map((t) => {
-            if (!selectedIds.includes(t.id)) return t;
-            return {
-              ...t,
-              status: 'done',
-              completedAt: new Date().toISOString(),
-            };
-          }),
-          selectedIds: [],
-        }));
-      },
-
-      addCategory: (name) => {
-        set((state) => ({
-          categories: [
-            ...state.categories,
-            { id: crypto.randomUUID(), name },
-          ],
-        }));
-      },
-
-      deleteCategory: (id) => {
-        set((state) => ({
-          categories: state.categories.filter((c) => c.id !== id),
-          tasks: state.tasks.map((t) =>
-            t.category === id ? { ...t, category: '' } : t
-          ),
-        }));
-      },
-
-      setView: (view) => set({ view, selectedIds: [] }),
-
-      setFilter: (filter) =>
-        set((state) => ({ filter: { ...state.filter, ...filter } })),
-
-      resetFilters: () => set({ filter: initialFilters }),
-
-      openTaskForm: (taskId) => set({ isTaskFormOpen: true, editingTaskId: taskId || null }),
-      closeTaskForm: () => set({ isTaskFormOpen: false, editingTaskId: null }),
-
-      exportData: () => {
-        const { tasks, categories } = get();
-        return JSON.stringify({ tasks, categories }, null, 2);
-      },
-
-      importData: (json) => {
-        try {
-          const data = JSON.parse(json);
-          if (Array.isArray(data.tasks) && Array.isArray(data.categories)) {
-            set({ tasks: data.tasks, categories: data.categories, selectedIds: [] });
-          }
-        } catch {
-          // ignore invalid JSON
-        }
-      },
-
-      clearAllData: () =>
-        set({ tasks: [], categories: initialCategories, selectedIds: [] }),
-    }),
-    {
-      name: 'ceat-task-store',
-      partialize: (state) => ({
-        tasks: state.tasks,
-        categories: state.categories,
-        view: state.view,
-        filter: state.filter,
-      }),
+  fetchData: async () => {
+    set({ isLoading: true });
+    try {
+      const [tasksRes, categoriesRes] = await Promise.all([
+        fetch(`${API_BASE}/api/tasks`),
+        fetch(`${API_BASE}/api/categories`),
+      ]);
+      const tasks = await tasksRes.json();
+      const categories = await categoriesRes.json();
+      set({ tasks, categories, isLoading: false });
+    } catch (err) {
+      console.error('Failed to fetch data:', err);
+      set({ isLoading: false });
     }
-  )
-);
+  },
+
+  addTask: async (task) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/tasks`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(task),
+      });
+      const newTask = await res.json();
+      set((state) => ({ tasks: [newTask, ...state.tasks] }));
+    } catch (err) {
+      console.error('Failed to add task:', err);
+    }
+  },
+
+  updateTask: async (id, updates) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/tasks/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
+      const updatedTask = await res.json();
+      set((state) => ({
+        tasks: state.tasks.map((t) => (t.id === id ? updatedTask : t)),
+      }));
+    } catch (err) {
+      console.error('Failed to update task:', err);
+    }
+  },
+
+  deleteTask: async (id) => {
+    try {
+      await fetch(`${API_BASE}/api/tasks/${id}`, { method: 'DELETE' });
+      set((state) => ({
+        tasks: state.tasks.filter((t) => t.id !== id),
+        selectedIds: state.selectedIds.filter((sid) => sid !== id),
+      }));
+    } catch (err) {
+      console.error('Failed to delete task:', err);
+    }
+  },
+
+  toggleTask: async (id) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/tasks/${id}/toggle`, {
+        method: 'POST',
+      });
+      const updatedTask = await res.json();
+      set((state) => ({
+        tasks: state.tasks.map((t) => (t.id === id ? updatedTask : t)),
+      }));
+    } catch (err) {
+      console.error('Failed to toggle task:', err);
+    }
+  },
+
+  moveTaskStatus: async (id, status) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/tasks/${id}/move`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+      const updatedTask = await res.json();
+      set((state) => ({
+        tasks: state.tasks.map((t) => (t.id === id ? updatedTask : t)),
+      }));
+    } catch (err) {
+      console.error('Failed to move task:', err);
+    }
+  },
+
+  toggleSelect: (id) => {
+    set((state) => ({
+      selectedIds: state.selectedIds.includes(id)
+        ? state.selectedIds.filter((sid) => sid !== id)
+        : [...state.selectedIds, id],
+    }));
+  },
+
+  selectAll: (ids) => set({ selectedIds: ids }),
+  clearSelection: () => set({ selectedIds: [] }),
+
+  bulkDelete: async () => {
+    const { selectedIds, tasks } = get();
+    if (selectedIds.length === 0) return;
+    try {
+      await fetch(`${API_BASE}/api/tasks/bulk-delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: selectedIds }),
+      });
+      set({
+        tasks: tasks.filter((t) => !selectedIds.includes(t.id)),
+        selectedIds: [],
+      });
+    } catch (err) {
+      console.error('Failed to bulk delete:', err);
+    }
+  },
+
+  bulkComplete: async () => {
+    const { selectedIds, tasks } = get();
+    if (selectedIds.length === 0) return;
+    try {
+      await fetch(`${API_BASE}/api/tasks/bulk-complete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: selectedIds }),
+      });
+      const now = new Date().toISOString();
+      set({
+        tasks: tasks.map((t) =>
+          selectedIds.includes(t.id)
+            ? { ...t, status: 'done' as Status, completedAt: now }
+            : t
+        ),
+        selectedIds: [],
+      });
+    } catch (err) {
+      console.error('Failed to bulk complete:', err);
+    }
+  },
+
+  addCategory: async (name) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/categories`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+      });
+      const newCategory = await res.json();
+      set((state) => ({
+        categories: [...state.categories, newCategory],
+      }));
+    } catch (err) {
+      console.error('Failed to add category:', err);
+    }
+  },
+
+  deleteCategory: async (id) => {
+    try {
+      await fetch(`${API_BASE}/api/categories/${id}`, { method: 'DELETE' });
+      set((state) => ({
+        categories: state.categories.filter((c) => c.id !== id),
+        tasks: state.tasks.map((t) =>
+          t.category === id ? { ...t, category: '' } : t
+        ),
+      }));
+    } catch (err) {
+      console.error('Failed to delete category:', err);
+    }
+  },
+
+  setView: (view) => set({ view, selectedIds: [] }),
+
+  setFilter: (filter) =>
+    set((state) => ({ filter: { ...state.filter, ...filter } })),
+
+  resetFilters: () => set({ filter: initialFilters }),
+
+  openTaskForm: (taskId) => set({ isTaskFormOpen: true, editingTaskId: taskId || null }),
+  closeTaskForm: () => set({ isTaskFormOpen: false, editingTaskId: null }),
+
+  importData: async (json) => {
+    try {
+      const data = JSON.parse(json);
+      await fetch(`${API_BASE}/api/tasks/import`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      await get().fetchData();
+    } catch (err) {
+      console.error('Failed to import data:', err);
+    }
+  },
+
+  clearAllData: async () => {
+    try {
+      await fetch(`${API_BASE}/api/tasks/clear`, { method: 'POST' });
+      set({ tasks: [], categories: [], selectedIds: [] });
+    } catch (err) {
+      console.error('Failed to clear data:', err);
+    }
+  },
+
+  exportData: () => {
+    const { tasks, categories } = get();
+    return JSON.stringify({ tasks, categories }, null, 2);
+  },
+}));
 
 export function getFilteredTasks(tasks: Task[], filter: FilterState): Task[] {
   let result = [...tasks];

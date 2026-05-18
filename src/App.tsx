@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTaskStore } from './store/taskStore';
 import { Header } from './components/layout/Header';
 import { Sidebar } from './components/layout/Sidebar';
@@ -18,8 +18,12 @@ const viewMap = {
 };
 
 function App() {
-  const { view } = useTaskStore();
+  const { view, fetchData } = useTaskStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const CurrentView = viewMap[view];
 

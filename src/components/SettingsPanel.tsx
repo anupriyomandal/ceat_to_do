@@ -26,13 +26,13 @@ export const SettingsPanel: React.FC = () => {
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (ev) => {
+    reader.onload = async (ev) => {
       const text = String(ev.target?.result || '');
-      importData(text);
+      await importData(text);
     };
     reader.readAsText(file);
     e.target.value = '';
