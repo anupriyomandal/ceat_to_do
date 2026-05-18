@@ -4,16 +4,13 @@ const nextConfig = {
     unoptimized: true,
   },
   async rewrites() {
-    // In dev, proxy API calls to the local Railway backend
-    if (process.env.NODE_ENV === 'development') {
-      return [
-        {
-          source: '/api/:path*',
-          destination: 'http://localhost:3000/api/:path*',
-        },
-      ];
-    }
-    return [];
+    const apiBase = process.env.API_BASE_URL || 'http://localhost:3000';
+    return [
+      {
+        source: '/api/:path*',
+        destination: `${apiBase}/api/:path*`,
+      },
+    ];
   },
 };
 
