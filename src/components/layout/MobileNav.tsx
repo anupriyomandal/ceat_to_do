@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, ListTodo, KanbanSquare, Settings, Plus } from 'lucide-react';
+import { LayoutDashboard, ListTodo, KanbanSquare, MessageSquare, Settings, Plus } from 'lucide-react';
 import { useTaskStore } from '../../store/taskStore';
 import type { ViewMode } from '../../types';
 
@@ -7,6 +7,7 @@ const navItems: { view: ViewMode; label: string; icon: React.ReactNode }[] = [
   { view: 'dashboard', label: 'Home', icon: <LayoutDashboard className="w-5 h-5" /> },
   { view: 'list', label: 'Tasks', icon: <ListTodo className="w-5 h-5" /> },
   { view: 'board', label: 'Board', icon: <KanbanSquare className="w-5 h-5" /> },
+  { view: 'forum', label: 'Forum', icon: <MessageSquare className="w-5 h-5" /> },
   { view: 'settings', label: 'Settings', icon: <Settings className="w-5 h-5" /> },
 ];
 

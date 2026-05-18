@@ -8,12 +8,14 @@ import { TaskForm } from './components/TaskForm';
 import { DashboardView } from './views/DashboardView';
 import { ListView } from './views/ListView';
 import { BoardView } from './views/BoardView';
+import { ForumView } from './views/ForumView';
 import { SettingsView } from './views/SettingsView';
 
 const viewMap = {
   dashboard: DashboardView,
   list: ListView,
   board: BoardView,
+  forum: ForumView,
   settings: SettingsView,
 };
 

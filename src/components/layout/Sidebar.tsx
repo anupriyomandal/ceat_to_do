@@ -3,6 +3,7 @@ import {
   LayoutDashboard,
   ListTodo,
   KanbanSquare,
+  MessageSquare,
   Settings,
   Plus,
   X,
@@ -19,6 +20,7 @@ const navItems: { view: ViewMode; label: string; icon: React.ReactNode }[] = [
   { view: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
   { view: 'list', label: 'My Tasks', icon: <ListTodo className="w-5 h-5" /> },
   { view: 'board', label: 'Board', icon: <KanbanSquare className="w-5 h-5" /> },
+  { view: 'forum', label: 'Forum', icon: <MessageSquare className="w-5 h-5" /> },
   { view: 'settings', label: 'Settings', icon: <Settings className="w-5 h-5" /> },
 ];
 

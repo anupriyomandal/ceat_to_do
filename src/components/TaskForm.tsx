@@ -18,20 +18,23 @@ export const TaskForm: React.FC = () => {
   const [assignedFrom, setAssignedFrom] = useState('');
   const [assignedTo, setAssignedTo] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isEditing = Boolean(editingTaskId);
-  const editingTask = isEditing ? tasks.find((t) => t.id === editingTaskId) : null;
 
   useEffect(() => {
-    if (editingTask) {
-      setTitle(editingTask.title);
-      setDescription(editingTask.description);
-      setDueDate(editingTask.dueDate || '');
-      setPriority(editingTask.priority);
-      setStatus(editingTask.status);
-      setCategory(editingTask.category);
-      setAssignedFrom(editingTask.assignedFrom || '');
-      setAssignedTo(editingTask.assignedTo || '');
+    if (editingTaskId) {
+      const task = tasks.find((t) => t.id === editingTaskId);
+      if (task) {
+        setTitle(task.title);
+        setDescription(task.description);
+        setDueDate(task.dueDate || '');
+        setPriority(task.priority);
+        setStatus(task.status);
+        setCategory(task.category);
+        setAssignedFrom(task.assignedFrom || '');
+        setAssignedTo(task.assignedTo || '');
+      }
     } else {
       setTitle('');
       setDescription('');
@@ -43,7 +46,8 @@ export const TaskForm: React.FC = () => {
       setAssignedTo('');
     }
     setErrors({});
-  }, [editingTask, isTaskFormOpen, categories]);
+    setIsSubmitting(false);
+  }, [editingTaskId]);
 
   const validate = () => {
     const next: Record<string, string> = {};
@@ -52,9 +56,9 @@ export const TaskForm: React.FC = () => {
     return Object.keys(next).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     if (!validate()) return;
+    setIsSubmitting(true);
 
     const payload = {
       title: title.trim(),
@@ -67,12 +71,16 @@ export const TaskForm: React.FC = () => {
       assignedTo: assignedTo.trim() || undefined,
     };
 
-    if (isEditing && editingTaskId) {
-      updateTask(editingTaskId, payload);
-    } else {
-      addTask(payload);
+    try {
+      if (isEditing && editingTaskId) {
+        await updateTask(editingTaskId, payload);
+      } else {
+        await addTask(payload);
+      }
+      closeTaskForm();
+    } catch {
+      setIsSubmitting(false);
     }
-    closeTaskForm();
   };
 
   const selectClass =
@@ -86,13 +94,13 @@ export const TaskForm: React.FC = () => {
       footer={
         <>
           <Button variant="ghost" onClick={closeTaskForm}>Cancel</Button>
-          <Button type="submit" form="task-form" variant="accent">
+          <Button variant="accent" onClick={handleSubmit} isLoading={isSubmitting}>
             {isEditing ? 'Save Changes' : 'Create Task'}
           </Button>
         </>
       }
     >
-      <form id="task-form" onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-4">
         <Input
           label="Title"
           value={title}

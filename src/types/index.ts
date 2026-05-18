@@ -1,6 +1,6 @@
 export type Priority = 'low' | 'medium' | 'high';
 export type Status = 'todo' | 'in-progress' | 'done';
-export type ViewMode = 'dashboard' | 'list' | 'board' | 'settings';
+export type ViewMode = 'dashboard' | 'list' | 'board' | 'forum' | 'settings';
 export type SortBy = 'createdAt' | 'dueDate' | 'priority' | 'title';
 
 export interface Category {
@@ -20,6 +20,12 @@ export interface Task {
   assignedTo?: string;
   createdAt: string;
   completedAt?: string;
+}
+
+export interface Post {
+  id: string;
+  content: string;
+  createdAt: string;
 }
 
 export interface FilterState {
