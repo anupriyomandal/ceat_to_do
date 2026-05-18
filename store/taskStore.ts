@@ -3,7 +3,7 @@
 import { create } from 'zustand';
 import type { Task, Category, FilterState, Status } from '../types';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || '';
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 
 interface TaskState {
   tasks: Task[];
@@ -75,33 +75,33 @@ export const useTaskStore = create<TaskState>((set, get) => ({
   },
 
   addTask: async (task) => {
-    try {
-      const res = await fetch(`${API_BASE}/api/tasks`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(task),
-      });
-      const newTask = await res.json();
-      set((state) => ({ tasks: [newTask, ...state.tasks] }));
-    } catch (err) {
-      console.error('Failed to add task:', err);
+    const res = await fetch(`${API_BASE}/api/tasks`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(task),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: 'Failed to create task' }));
+      throw new Error(err.error || `HTTP ${res.status}`);
     }
+    const newTask = await res.json();
+    set((state) => ({ tasks: [newTask, ...state.tasks] }));
   },
 
   updateTask: async (id, updates) => {
-    try {
-      const res = await fetch(`${API_BASE}/api/tasks/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates),
-      });
-      const updatedTask = await res.json();
-      set((state) => ({
-        tasks: state.tasks.map((t) => (t.id === id ? updatedTask : t)),
-      }));
-    } catch (err) {
-      console.error('Failed to update task:', err);
+    const res = await fetch(`${API_BASE}/api/tasks/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: 'Failed to update task' }));
+      throw new Error(err.error || `HTTP ${res.status}`);
     }
+    const updatedTask = await res.json();
+    set((state) => ({
+      tasks: state.tasks.map((t) => (t.id === id ? updatedTask : t)),
+    }));
   },
 
   deleteTask: async (id) => {

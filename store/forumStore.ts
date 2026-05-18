@@ -3,7 +3,7 @@
 import { create } from 'zustand';
 import type { Post } from '../types';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || '';
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 
 interface ForumState {
   posts: Post[];

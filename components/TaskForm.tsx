@@ -31,6 +31,7 @@ export function TaskForm() {
   const [assignedTo, setAssignedTo] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [apiError, setApiError] = useState('');
 
   useEffect(() => {
     if (editingTaskId) {
@@ -56,6 +57,7 @@ export function TaskForm() {
       setAssignedTo('');
     }
     setErrors({});
+    setApiError('');
     setIsSubmitting(false);
   }, [editingTaskId]);
 
@@ -74,6 +76,7 @@ export function TaskForm() {
     if (!validate()) return;
 
     setIsSubmitting(true);
+    setApiError('');
     const taskData = {
       title: title.trim(),
       description: description.trim(),
@@ -85,12 +88,17 @@ export function TaskForm() {
       assignedTo: assignedTo.trim() || undefined,
     };
 
-    if (editingTaskId) {
-      await updateTask(editingTaskId, taskData);
-    } else {
-      await addTask(taskData);
+    try {
+      if (editingTaskId) {
+        await updateTask(editingTaskId, taskData);
+      } else {
+        await addTask(taskData);
+      }
+      closeTaskForm();
+    } catch (err: any) {
+      setApiError(err.message || 'Something went wrong. Please try again.');
+      setIsSubmitting(false);
     }
-    closeTaskForm();
   };
 
   const categoryOptions = [
@@ -175,6 +183,12 @@ export function TaskForm() {
               placeholder="e.g. Team Member"
             />
           </div>
+
+          {apiError && (
+            <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive">
+              {apiError}
+            </div>
+          )}
 
           <div className="flex items-center justify-end gap-3 pt-4 border-t">
             <Button variant="ghost" onClick={closeTaskForm} type="button">
