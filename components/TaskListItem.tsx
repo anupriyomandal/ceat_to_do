@@ -11,6 +11,12 @@ const priorityBorder: Record<Task['priority'], string> = {
   high: 'border-l-red-500',
 };
 
+const statusBg: Record<Task['status'], string> = {
+  todo: 'bg-card',
+  'in-progress': 'bg-blue-50/60',
+  done: 'bg-emerald-50/50',
+};
+
 interface TaskListItemProps {
   task: Task;
   onClick: () => void;
@@ -24,7 +30,8 @@ export function TaskListItem({ task, onClick }: TaskListItemProps) {
     <div
       onClick={onClick}
       className={cn(
-        'group relative flex items-center gap-3 rounded-xl border border-border bg-card px-5 py-4 cursor-pointer transition-all duration-200 hover:shadow-card-hover hover:-translate-y-0.5 border-l-4',
+        'group relative flex items-center gap-3 rounded-xl border border-border px-5 py-4 cursor-pointer transition-all duration-200 hover:shadow-card-hover hover:-translate-y-0.5 border-l-4',
+        statusBg[task.status],
         priorityBorder[task.priority],
         task.status === 'done' && 'opacity-50',
         isSelected && 'ring-2 ring-primary/30'
