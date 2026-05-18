@@ -87,7 +87,8 @@ router.put('/:id', async (req, res) => {
     const sql = `UPDATE tasks SET ${updates.join(', ')} WHERE id = ?`;
 
     if (db.isPostgres) {
-      const pgSql = sql.replace(/\?/g, (__, i) => `$${i + 1}`);
+      let idx = 1;
+      const pgSql = sql.replace(/\?/g, () => `$${idx++}`);
       await db.run(pgSql, params);
     } else {
       db.run(sql, params);
