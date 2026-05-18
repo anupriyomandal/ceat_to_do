@@ -98,6 +98,21 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             <p className="text-sm text-gray-600 mt-1 line-clamp-2">{task.description}</p>
           )}
 
+          {(task.assignedFrom || task.assignedTo) && (
+            <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-gray-500">
+              {task.assignedFrom && (
+                <span>
+                  <span className="font-medium">From:</span> {task.assignedFrom}
+                </span>
+              )}
+              {task.assignedTo && (
+                <span>
+                  <span className="font-medium">To:</span> {task.assignedTo}
+                </span>
+              )}
+            </div>
+          )}
+
           <div className="flex flex-wrap items-center gap-2 mt-3">
             <span className={`w-2 h-2 rounded-full ${priority.color}`} aria-hidden="true" />
             <span className="text-xs text-gray-500 font-medium">{priority.label}</span>

@@ -12,6 +12,8 @@ function rowToTask(row) {
     priority: row.priority,
     status: row.status,
     category: row.category || '',
+    assignedFrom: row.assigned_from || undefined,
+    assignedTo: row.assigned_to || undefined,
     createdAt: row.created_at,
     completedAt: row.completed_at || undefined,
   };
@@ -29,21 +31,21 @@ router.get('/', async (_req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const { title, description, dueDate, priority, status, category } = req.body;
+    const { title, description, dueDate, priority, status, category, assignedFrom, assignedTo } = req.body;
     const id = crypto.randomUUID();
     const createdAt = new Date().toISOString();
 
     if (db.isPostgres) {
       await db.run(
-        `INSERT INTO tasks (id, title, description, due_date, priority, status, category, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-        [id, title, description || '', dueDate || null, priority, status, category || '', createdAt]
+        `INSERT INTO tasks (id, title, description, due_date, priority, status, category, assigned_from, assigned_to, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+        [id, title, description || '', dueDate || null, priority, status, category || '', assignedFrom || null, assignedTo || null, createdAt]
       );
     } else {
       db.run(
-        `INSERT INTO tasks (id, title, description, due_date, priority, status, category, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [id, title, description || '', dueDate || null, priority, status, category || '', createdAt]
+        `INSERT INTO tasks (id, title, description, due_date, priority, status, category, assigned_from, assigned_to, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [id, title, description || '', dueDate || null, priority, status, category || '', assignedFrom || null, assignedTo || null, createdAt]
       );
     }
 
@@ -61,7 +63,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, description, dueDate, priority, status, category } = req.body;
+    const { title, description, dueDate, priority, status, category, assignedFrom, assignedTo } = req.body;
 
     const updates = [];
     const params = [];
@@ -72,6 +74,8 @@ router.put('/:id', async (req, res) => {
     if (priority !== undefined) { updates.push('priority = ?'); params.push(priority); }
     if (status !== undefined) { updates.push('status = ?'); params.push(status); }
     if (category !== undefined) { updates.push('category = ?'); params.push(category); }
+    if (assignedFrom !== undefined) { updates.push('assigned_from = ?'); params.push(assignedFrom || null); }
+    if (assignedTo !== undefined) { updates.push('assigned_to = ?'); params.push(assignedTo || null); }
     if (status === 'done') { updates.push('completed_at = ?'); params.push(new Date().toISOString()); }
     if (status === 'todo' || status === 'in-progress') { updates.push('completed_at = ?'); params.push(null); }
 
@@ -239,8 +243,8 @@ router.post('/import', async (req, res) => {
         try {
           if (db.isPostgres) {
             await db.run(
-              `INSERT INTO tasks (id, title, description, due_date, priority, status, category, created_at, completed_at)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+              `INSERT INTO tasks (id, title, description, due_date, priority, status, category, assigned_from, assigned_to, created_at, completed_at)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
                ON CONFLICT (id) DO UPDATE SET
                  title = EXCLUDED.title,
                  description = EXCLUDED.description,
@@ -248,6 +252,8 @@ router.post('/import', async (req, res) => {
                  priority = EXCLUDED.priority,
                  status = EXCLUDED.status,
                  category = EXCLUDED.category,
+                 assigned_from = EXCLUDED.assigned_from,
+                 assigned_to = EXCLUDED.assigned_to,
                  completed_at = EXCLUDED.completed_at`,
               [
                 task.id,
@@ -257,14 +263,16 @@ router.post('/import', async (req, res) => {
                 task.priority,
                 task.status,
                 task.category || '',
+                task.assignedFrom || null,
+                task.assignedTo || null,
                 task.createdAt,
                 task.completedAt || null,
               ]
             );
           } else {
             db.run(
-              `INSERT OR REPLACE INTO tasks (id, title, description, due_date, priority, status, category, created_at, completed_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              `INSERT OR REPLACE INTO tasks (id, title, description, due_date, priority, status, category, assigned_from, assigned_to, created_at, completed_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
               [
                 task.id,
                 task.title,
@@ -273,6 +281,8 @@ router.post('/import', async (req, res) => {
                 task.priority,
                 task.status,
                 task.category || '',
+                task.assignedFrom || null,
+                task.assignedTo || null,
                 task.createdAt,
                 task.completedAt || null,
               ]

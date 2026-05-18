@@ -15,6 +15,8 @@ export const TaskForm: React.FC = () => {
   const [priority, setPriority] = useState<Priority>('medium');
   const [status, setStatus] = useState<Status>('todo');
   const [category, setCategory] = useState('');
+  const [assignedFrom, setAssignedFrom] = useState('');
+  const [assignedTo, setAssignedTo] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const isEditing = Boolean(editingTaskId);
@@ -28,6 +30,8 @@ export const TaskForm: React.FC = () => {
       setPriority(editingTask.priority);
       setStatus(editingTask.status);
       setCategory(editingTask.category);
+      setAssignedFrom(editingTask.assignedFrom || '');
+      setAssignedTo(editingTask.assignedTo || '');
     } else {
       setTitle('');
       setDescription('');
@@ -35,6 +39,8 @@ export const TaskForm: React.FC = () => {
       setPriority('medium');
       setStatus('todo');
       setCategory(categories[0]?.id || '');
+      setAssignedFrom('');
+      setAssignedTo('');
     }
     setErrors({});
   }, [editingTask, isTaskFormOpen, categories]);
@@ -57,6 +63,8 @@ export const TaskForm: React.FC = () => {
       priority,
       status,
       category,
+      assignedFrom: assignedFrom.trim() || undefined,
+      assignedTo: assignedTo.trim() || undefined,
     };
 
     if (isEditing && editingTaskId) {
@@ -154,6 +162,21 @@ export const TaskForm: React.FC = () => {
               ))}
             </select>
           </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <Input
+            label="Assigned From"
+            value={assignedFrom}
+            onChange={(e) => setAssignedFrom(e.target.value)}
+            placeholder="Assigner name"
+          />
+          <Input
+            label="Assigned To"
+            value={assignedTo}
+            onChange={(e) => setAssignedTo(e.target.value)}
+            placeholder="Assignee name"
+          />
         </div>
       </form>
     </Modal>

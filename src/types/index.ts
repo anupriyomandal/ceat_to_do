@@ -16,6 +16,8 @@ export interface Task {
   priority: Priority;
   status: Status;
   category: string;
+  assignedFrom?: string;
+  assignedTo?: string;
   createdAt: string;
   completedAt?: string;
 }

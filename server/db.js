@@ -33,6 +33,9 @@ if (process.env.DATABASE_URL) {
       )
     `);
 
+    await pool.query(`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS assigned_from TEXT`);
+    await pool.query(`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS assigned_to TEXT`);
+
     const { rows } = await pool.query("SELECT COUNT(*) FROM categories");
     if (parseInt(rows[0].count, 10) === 0) {
       const defaults = [
@@ -101,6 +104,9 @@ if (process.env.DATABASE_URL) {
       completed_at TEXT
     )
   `);
+
+  try { sqlite.exec('ALTER TABLE tasks ADD COLUMN assigned_from TEXT'); } catch {}
+  try { sqlite.exec('ALTER TABLE tasks ADD COLUMN assigned_to TEXT'); } catch {}
 
   const count = sqlite.prepare('SELECT COUNT(*) as count FROM categories').get();
   if (count.count === 0) {
