@@ -3,7 +3,8 @@
 import { create } from 'zustand';
 import type { Post } from '../types';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || '';
+// API calls go through Vercel rewrites (/api/* -> Railway backend)
+const API_BASE = '';
 
 interface ForumState {
   posts: Post[];
@@ -22,6 +23,7 @@ export const useForumStore = create<ForumState>((set) => ({
     set({ isLoading: true });
     try {
       const res = await fetch(`${API_BASE}/api/posts`);
+      if (!res.ok) throw new Error('Failed to fetch posts');
       const posts = await res.json();
       set({ posts, isLoading: false });
     } catch (err) {
@@ -31,27 +33,21 @@ export const useForumStore = create<ForumState>((set) => ({
   },
 
   addPost: async (content) => {
-    try {
-      const res = await fetch(`${API_BASE}/api/posts`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content }),
-      });
-      const newPost = await res.json();
-      set((state) => ({ posts: [newPost, ...state.posts] }));
-    } catch (err) {
-      console.error('Failed to add post:', err);
-    }
+    const res = await fetch(`${API_BASE}/api/posts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content }),
+    });
+    if (!res.ok) throw new Error('Failed to create post');
+    const newPost = await res.json();
+    set((state) => ({ posts: [newPost, ...state.posts] }));
   },
 
   deletePost: async (id) => {
-    try {
-      await fetch(`${API_BASE}/api/posts/${id}`, { method: 'DELETE' });
-      set((state) => ({
-        posts: state.posts.filter((p) => p.id !== id),
-      }));
-    } catch (err) {
-      console.error('Failed to delete post:', err);
-    }
+    const res = await fetch(`${API_BASE}/api/posts/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error('Failed to delete post');
+    set((state) => ({
+      posts: state.posts.filter((p) => p.id !== id),
+    }));
   },
 }));

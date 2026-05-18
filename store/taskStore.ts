@@ -3,7 +3,9 @@
 import { create } from 'zustand';
 import type { Task, Category, FilterState, Status } from '../types';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || '';
+// API calls go through Vercel rewrites (/api/* -> Railway backend)
+// This avoids CORS and keeps everything same-origin
+const API_BASE = '';
 
 interface TaskState {
   tasks: Task[];
@@ -65,6 +67,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
         fetch(`${API_BASE}/api/tasks`),
         fetch(`${API_BASE}/api/categories`),
       ]);
+      if (!tasksRes.ok || !categoriesRes.ok) throw new Error('Failed to fetch');
       const tasks = await tasksRes.json();
       const categories = await categoriesRes.json();
       set({ tasks, categories, isLoading: false });
@@ -105,43 +108,34 @@ export const useTaskStore = create<TaskState>((set, get) => ({
   },
 
   deleteTask: async (id) => {
-    try {
-      await fetch(`${API_BASE}/api/tasks/${id}`, { method: 'DELETE' });
-      set((state) => ({
-        tasks: state.tasks.filter((t) => t.id !== id),
-        selectedIds: state.selectedIds.filter((sid) => sid !== id),
-      }));
-    } catch (err) {
-      console.error('Failed to delete task:', err);
-    }
+    const res = await fetch(`${API_BASE}/api/tasks/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error('Failed to delete task');
+    set((state) => ({
+      tasks: state.tasks.filter((t) => t.id !== id),
+      selectedIds: state.selectedIds.filter((sid) => sid !== id),
+    }));
   },
 
   toggleTask: async (id) => {
-    try {
-      const res = await fetch(`${API_BASE}/api/tasks/${id}/toggle`, { method: 'POST' });
-      const updatedTask = await res.json();
-      set((state) => ({
-        tasks: state.tasks.map((t) => (t.id === id ? updatedTask : t)),
-      }));
-    } catch (err) {
-      console.error('Failed to toggle task:', err);
-    }
+    const res = await fetch(`${API_BASE}/api/tasks/${id}/toggle`, { method: 'POST' });
+    if (!res.ok) throw new Error('Failed to toggle task');
+    const updatedTask = await res.json();
+    set((state) => ({
+      tasks: state.tasks.map((t) => (t.id === id ? updatedTask : t)),
+    }));
   },
 
   moveTaskStatus: async (id, status) => {
-    try {
-      const res = await fetch(`${API_BASE}/api/tasks/${id}/move`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
-      });
-      const updatedTask = await res.json();
-      set((state) => ({
-        tasks: state.tasks.map((t) => (t.id === id ? updatedTask : t)),
-      }));
-    } catch (err) {
-      console.error('Failed to move task:', err);
-    }
+    const res = await fetch(`${API_BASE}/api/tasks/${id}/move`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    });
+    if (!res.ok) throw new Error('Failed to move task');
+    const updatedTask = await res.json();
+    set((state) => ({
+      tasks: state.tasks.map((t) => (t.id === id ? updatedTask : t)),
+    }));
   },
 
   toggleSelect: (id) => {
@@ -158,72 +152,60 @@ export const useTaskStore = create<TaskState>((set, get) => ({
   bulkDelete: async () => {
     const { selectedIds, tasks } = get();
     if (selectedIds.length === 0) return;
-    try {
-      await fetch(`${API_BASE}/api/tasks/bulk-delete`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids: selectedIds }),
-      });
-      set({
-        tasks: tasks.filter((t) => !selectedIds.includes(t.id)),
-        selectedIds: [],
-      });
-    } catch (err) {
-      console.error('Failed to bulk delete:', err);
-    }
+    const res = await fetch(`${API_BASE}/api/tasks/bulk-delete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: selectedIds }),
+    });
+    if (!res.ok) throw new Error('Failed to bulk delete');
+    set({
+      tasks: tasks.filter((t) => !selectedIds.includes(t.id)),
+      selectedIds: [],
+    });
   },
 
   bulkComplete: async () => {
     const { selectedIds, tasks } = get();
     if (selectedIds.length === 0) return;
-    try {
-      await fetch(`${API_BASE}/api/tasks/bulk-complete`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids: selectedIds }),
-      });
-      const now = new Date().toISOString();
-      set({
-        tasks: tasks.map((t) =>
-          selectedIds.includes(t.id)
-            ? { ...t, status: 'done' as Status, completedAt: now }
-            : t
-        ),
-        selectedIds: [],
-      });
-    } catch (err) {
-      console.error('Failed to bulk complete:', err);
-    }
+    const res = await fetch(`${API_BASE}/api/tasks/bulk-complete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: selectedIds }),
+    });
+    if (!res.ok) throw new Error('Failed to bulk complete');
+    const now = new Date().toISOString();
+    set({
+      tasks: tasks.map((t) =>
+        selectedIds.includes(t.id)
+          ? { ...t, status: 'done' as Status, completedAt: now }
+          : t
+      ),
+      selectedIds: [],
+    });
   },
 
   addCategory: async (name) => {
-    try {
-      const res = await fetch(`${API_BASE}/api/categories`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name }),
-      });
-      const newCategory = await res.json();
-      set((state) => ({
-        categories: [...state.categories, newCategory],
-      }));
-    } catch (err) {
-      console.error('Failed to add category:', err);
-    }
+    const res = await fetch(`${API_BASE}/api/categories`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    });
+    if (!res.ok) throw new Error('Failed to add category');
+    const newCategory = await res.json();
+    set((state) => ({
+      categories: [...state.categories, newCategory],
+    }));
   },
 
   deleteCategory: async (id) => {
-    try {
-      await fetch(`${API_BASE}/api/categories/${id}`, { method: 'DELETE' });
-      set((state) => ({
-        categories: state.categories.filter((c) => c.id !== id),
-        tasks: state.tasks.map((t) =>
-          t.category === id ? { ...t, category: '' } : t
-        ),
-      }));
-    } catch (err) {
-      console.error('Failed to delete category:', err);
-    }
+    const res = await fetch(`${API_BASE}/api/categories/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error('Failed to delete category');
+    set((state) => ({
+      categories: state.categories.filter((c) => c.id !== id),
+      tasks: state.tasks.map((t) =>
+        t.category === id ? { ...t, category: '' } : t
+      ),
+    }));
   },
 
   setFilter: (filter) =>
@@ -236,26 +218,19 @@ export const useTaskStore = create<TaskState>((set, get) => ({
   closeTaskForm: () => set({ isTaskFormOpen: false, editingTaskId: null }),
 
   importData: async (json) => {
-    try {
-      const data = JSON.parse(json);
-      await fetch(`${API_BASE}/api/tasks/import`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      await get().fetchData();
-    } catch (err) {
-      console.error('Failed to import data:', err);
-    }
+    const res = await fetch(`${API_BASE}/api/tasks/import`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(JSON.parse(json)),
+    });
+    if (!res.ok) throw new Error('Failed to import data');
+    await get().fetchData();
   },
 
   clearAllData: async () => {
-    try {
-      await fetch(`${API_BASE}/api/tasks/clear`, { method: 'POST' });
-      set({ tasks: [], categories: [], selectedIds: [] });
-    } catch (err) {
-      console.error('Failed to clear data:', err);
-    }
+    const res = await fetch(`${API_BASE}/api/tasks/clear`, { method: 'POST' });
+    if (!res.ok) throw new Error('Failed to clear data');
+    set({ tasks: [], categories: [], selectedIds: [] });
   },
 
   exportData: () => {

@@ -8,7 +8,7 @@ interface VoiceRecorderProps {
   onTranscription: (text: string) => void;
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || '';
+const API_BASE = '';
 
 export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onTranscription }) => {
   const [isRecording, setIsRecording] = useState(false);
