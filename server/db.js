@@ -5,6 +5,7 @@ let db;
 let isPostgres = false;
 
 if (process.env.DATABASE_URL) {
+  console.log('[DB] DATABASE_URL detected — connecting to PostgreSQL...');
   const { Pool } = await import('pg');
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -54,6 +55,7 @@ if (process.env.DATABASE_URL) {
   };
 
   await init();
+  console.log('[DB] PostgreSQL connected and tables initialized.');
 
   db = {
     async query(sql, params = []) {
@@ -74,6 +76,9 @@ if (process.env.DATABASE_URL) {
     isPostgres: true,
   };
 } else {
+  console.warn('[DB] WARNING: DATABASE_URL not found. Falling back to SQLite.');
+  console.warn('[DB] Data will NOT persist across redeploys. Add a Railway PostgreSQL database and set DATABASE_URL.');
+
   let Database;
   try {
     Database = (await import('better-sqlite3')).default;
@@ -121,6 +126,8 @@ if (process.env.DATABASE_URL) {
       try { insert.run(id, name); } catch {}
     }
   }
+
+  console.log('[DB] SQLite initialized (local file: data.sqlite)');
 
   db = {
     query(sql, params = []) {
