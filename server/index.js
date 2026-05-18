@@ -13,7 +13,13 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+// CORS: allow local dev and Vercel frontend
+const FRONTEND_URL = process.env.FRONTEND_URL;
+const corsOptions = {
+  origin: FRONTEND_URL ? [FRONTEND_URL, 'http://localhost:3000'] : true,
+  credentials: true,
+};
+app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 

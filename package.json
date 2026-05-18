@@ -1,27 +1,33 @@
 {
   "name": "ceat-todo",
   "private": true,
-  "version": "1.0.0",
+  "version": "2.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview",
+    "dev": "next dev -p 3001",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
     "server": "node server/index.js",
-    "server:dev": "nodemon server/index.js",
-    "start": "node server/index.js"
+    "server:dev": "nodemon server/index.js"
   },
   "dependencies": {
     "@fontsource/inter": "^5.0.18",
+    "@hello-pangea/dnd": "^18.0.1",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "cors": "^2.8.6",
     "date-fns": "^3.6.0",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "framer-motion": "^12.38.0",
     "lucide-react": "^0.378.0",
+    "next": "^14.2.35",
     "pg": "^8.20.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "serve": "^14.2.3",
+    "tailwind-merge": "^3.6.0",
+    "tailwindcss-animate": "^1.0.7",
     "zustand": "^4.5.2"
   },
   "optionalDependencies": {
@@ -31,15 +37,14 @@
     "@types/better-sqlite3": "^7.6.13",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
+    "@types/node": "^20.12.0",
     "@types/pg": "^8.20.0",
     "@types/react": "^18.3.2",
     "@types/react-dom": "^18.3.0",
-    "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.19",
     "nodemon": "^3.1.14",
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.3",
-    "typescript": "^5.4.5",
-    "vite": "^5.2.11"
+    "typescript": "^5.4.5"
   }
 }
