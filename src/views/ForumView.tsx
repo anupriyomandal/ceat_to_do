@@ -83,7 +83,7 @@ export const ForumView: React.FC = () => {
           >
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1">
-                <p className="text-black whitespace-pre-wrap leading-relaxed">{post.content}</p>
+                <p className="text-sm text-black whitespace-pre-wrap leading-relaxed">{post.content}</p>
               </div>
               <button
                 onClick={() => deletePost(post.id)}
